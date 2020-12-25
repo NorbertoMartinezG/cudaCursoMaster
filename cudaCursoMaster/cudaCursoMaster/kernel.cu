@@ -5,7 +5,7 @@
 #include <stdio.h>
 
 /*
-02- Introducction to parallel programing
+------------------------02- Introducction to parallel programing -------------------------------------------------------------------------------------------------------------------------------------------------------
 
 Context (instruccion por turnos)
 	- Collection of data about process which allows processor to suspend or hold the execution of a process and restart the execution later.
@@ -26,5 +26,12 @@ Parallel Process
 Paralelismo vs concurrencia.
 	- Concurrencia = realizacion de procesos en distintos tiempos(secuenciales) de milesimas de segundo que aparentan simultaneidad o paralelismo
 	- Paralelismo = distintos nucleos realizan tareas al mismo tiempo
+
+------------------------04- Install -------------------------------------------------------------------------------------------------------------------------------------------------------
+Revisar compatibilidad en wikipedia en ingles.
+GPGPU- 
+windows + r (dxdiag) // visualiza las caracteristicas del PC 
+windows + r (cmd) //escribir (nvcc --version) para saber la version de CUDA instalado del PC
+
 
 */

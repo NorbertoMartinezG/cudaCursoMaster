@@ -412,6 +412,194 @@ GridDim = es la dimension de la rejilla ej. gridDim.x = 2 y gridDim.y = 2 da com
 // gid = tid + offset
 // gid = tid + blackldx.x * blockDim.x
 
+//#include "cuda_runtime.h"
+//#include "device_launch_parameters.h"
+//
+//#include <stdio.h>
+//#include <iostream>
+//using namespace std;
+//
+//
+//
+//__global__ void unique_gid_calculation(int * input)
+//{
+//	int tid = threadIdx.x;
+//	int offset = blockIdx.x * blockDim.x; // numero de hilos que componen un bloque 
+//	int gid = tid + offset; //indice en el que empezara a asignar valores a cada bloque de hilos
+//
+//	//ejemplo de 3 blocks
+///*
+//
+////1D						   0					            1							      3
+////			      	  _______________________		    ________________________		________________________
+////  				      |23|   |9|   |4|   |53|			|65|   |12|   |1|   |33|		|65|   |12|   |1|   |33|
+//tid(threadIdx)  =        0      1     2      3	          0     1      2      3			  0     1      2      3
+//blockIdx.x	  =		   0	  0     0	   0			  1     1      1      1			  2     2      2      2
+//blockDim.x      =        4	  4		4	   4			  4	    4	   4	  4			  4	    4	   4	  4
+//offset		  =		   0      0     0      0              4     4      4      4			  8     8      8      8
+//gid			  =		   0	  1     2      3			  4     5      6      7           8     9      10     11
+//
+//*/
+//
+//	printf("blockIdx.x : %d, threadIdx.x : %d, gid: %d, value : %d \n",
+//		blockIdx.x, tid, gid, input[gid]);
+//	 
+//}
+//
+//int main()
+//{
+//	int array_size = 16;
+//	int array_byte_size = sizeof(int) * array_size;
+//	int h_data[] = { 23,9,4,53,65,12,1,33,22,1,1,3,5,2,1,3 };
+//
+//	for (int i = 0; i < array_size; i++)
+//	{
+//		cout << h_data[i] << " ";
+//	}
+//
+//	cout << endl;
+//	cout << endl;
+//
+//	int* d_data;
+//	cudaMalloc((void**)&d_data, array_byte_size);
+//	cudaMemcpy(d_data, h_data, array_byte_size, cudaMemcpyHostToDevice);
+//
+//	//dim3 block(8); //8 threads en un bloque
+//	//dim3 grid(1);
+//
+//	dim3 block(4); // 4 threads en 4 bloques 
+//	dim3 grid(4);
+//
+//	unique_gid_calculation << <grid, block >> > (d_data);
+//	cudaDeviceReset();
+//	return 0;
+//
+//
+//}
+
+
+//------------------------110  Unique index calculation for 2D grid 1--------------------
+//------------------------110  calculo del indice global para cuadricula 2D 1 (GRID DE 2X2 CON 4x1 hilos) ------
+/*
+* 
+* Formula para calcular el indice unico para identificar los hilos que estan en una segunda fila
+* 
+* Index = row offset + block offset + tid
+* row offset = number of threads in one thread block row (blockldx.y)
+* block offset = number of threads in thread block(blockldx.x)
+* tid = threadldx.x
+* 
+* gid = gridDim.x * blockDim.x * blockldx.y + blockldx.x * blockDim.x + threadldx.x
+
+*/
+
+//asignar valores de un array continuos a un grupo de blocks (grid 2D con 16 hilos en 4 bloques de 4x1 hilos)
+
+//#include "cuda_runtime.h"
+//#include "device_launch_parameters.h"
+//
+//#include <stdio.h>
+//#include <iostream>
+//using namespace std;
+//
+//
+//
+//__global__ void unique_gid_calculation_2d(int * input)
+//{
+//	int tid = threadIdx.x;
+//	int offset = blockIdx.x * blockDim.x; // numero de hilos que componen un bloque 
+//
+//	int row_offset = blockDim.x * gridDim.x * blockIdx.y;
+//
+//	int gid = tid + offset + row_offset; //indice en el que empezara a asignar valores a cada bloque de hilos
+
+	//ejemplo de 3 blocks
+/*
+//2D (4 BLOQUES EN UN GRID DE 2X2
+//								0					            1						
+//			      	  _______________________		    ________________________		
+//fila 1 de bloques   |23|   |9|    |4|   |53|			|22|   |1|   |1|   |3|		
+
+//			      	  _______________________		    ________________________
+//fila 2 de bloques	  |65|   |12|   |1|   |33|			|5|    |2|   |1|   |3|
+
+//fila 1 de bloques   |23|   |9|    |4|   |53|			 |65|   |12|   |1|   |33|
+tid(threadIdx.X)=      0      1     2      3	          0     1      2      3			 
+blockIdx.x	  =		   0	  0     0	   0			  1     1      1      1			 
+blockDim.x    =        4	  4		4	   4			  4	    4	   4	  4			 
+offset		  =		   0      0     0      0              4     4      4      4			  
+blockIdx.y    =		   0	  0		0	   0			  0		0	   0	  0
+gridDim.x     =        2      2     2      2			  2		2	   2	  2
+rowOffset	  =		   0	  0     0      0			  0     0      0      0          
+gid			  =		   0	  1     2      3			  4     5      6      7          
+
+//fila 2 de bloques	 |65|   |12|   |1|   |33|			 |5|    |2|   |1|    |3|
+tid(threadIdx.X)=      0      1     2      3	          0     1      2      3
+blockIdx.x	  =		   0	  0     0	   0			  1     1      1      1
+blockDim.x    =        4	  4		4	   4			  4	    4	   4	  4
+offset		  =		   0      0     0      0              4     4      4      4
+blockIdx.y    =		   1	  1		1	   1			  1		1	   1	  1
+gridDim.x     =        2      2     2      2			  2		2	   2	  2
+rowOffset	  =		   8	  8     8      8			  8     8      8      8
+gid			  =		   8	  9     10     11			 12    13     14     15
+rowOffset = blockDim.x * gridDim.x * blockIdx.y;
+gid = tid + offset + row_offset; //indice en el que empezara a asignar valores a cada bloque de hilos
+*/
+
+//	printf("blockIdx.x : %d, blockIdx.y: %d, threadIdx.x: %d, gid: %d - input: %d \n",
+//		blockIdx.x, blockIdx.y, tid, gid, input[gid]);
+//	 
+//}
+//
+//int main()
+//{
+//	int array_size = 16;
+//	int array_byte_size = sizeof(int) * array_size;
+//	int h_data[] = { 23,9,4,53,65,12,1,33,22,1,1,3,5,2,1,3 };
+//
+//	for (int i = 0; i < array_size; i++)
+//	{
+//		cout << h_data[i] << " ";
+//	}
+//
+//	cout << endl;
+//	cout << endl;
+//
+//	int* d_data;
+//	cudaMalloc((void**)&d_data, array_byte_size);
+//	cudaMemcpy(d_data, h_data, array_byte_size, cudaMemcpyHostToDevice);
+//
+//	//dim3 block(8); //8 threads en un bloque
+//	//dim3 grid(1);
+//
+//	dim3 block(4); // 4 threads en 4 bloques 
+//	dim3 grid(2,2);
+//
+//	unique_gid_calculation_2d << <grid, block >> > (d_data);
+//	cudaDeviceReset();
+//	return 0;
+//
+//
+//}
+
+
+//-----------------110  Unique index calculation for 2D grid 2--------------------
+//-----------------110  calculo del indice global para cuadricula 2D  (GRID DE 2X2 CON 2x2 hilos) -----
+/*
+*
+* Formula para calcular el indice unico para identificar los hilos que estan en una segunda fila
+*
+* Index = row offset + block offset + tid
+* row offset = number of threads in one thread block row (blockldx.y)
+* block offset = number of threads in thread block(blockldx.x)
+* tid = threadldx.x
+*
+* gid = gridDim.x * blockDim.x * blockldx.y + blockldx.x * blockDim.x + threadldx.x
+
+*/
+
+//asignar valores de un array continuos a un grupo de blocks (grid 2D con 16 hilos en 4 bloques de 2x2 hilos)
+
 #include "cuda_runtime.h"
 #include "device_launch_parameters.h"
 
@@ -421,28 +609,78 @@ using namespace std;
 
 
 
-__global__ void unique_gid_calculation(int * input)
+__global__ void unique_gid_calculation_2d_2d(int * input)
 {
-	int tid = threadIdx.x;
-	int offset = blockIdx.x * blockDim.x; // numero de hilos que componen un bloque 
-	int gid = tid + offset; //indice en el que empezara a asignar valores a cada bloque de hilos
+	int tid = blockDim.x * threadIdx.y + threadIdx.x;
+	
+	int num_threads_in_a_block = blockDim.x * blockDim.y;
+	int block_offset = blockIdx.x * num_threads_in_a_block;
+
+	int num_threads_in_a_row = num_threads_in_a_block * gridDim.x;
+	int row_offset = num_threads_in_a_row * blockIdx.y;
+
+	int gid = tid + block_offset + row_offset; //indice en el que empezara a asignar valores a cada bloque de hilos
 
 	//ejemplo de 3 blocks
 /*
+//2D (4 BLOQUES EN UN GRID DE 2X2
+//								   0					            1
+//bloques 1 y 2    			___________					    __________
+//fila 1					|23|   |9|    					|22|   |1|   
+//fila 2					 |4|   |53|						|1|    |3|
 
-//1D						   0					            1							      3
-//			      	  _______________________		    ________________________		________________________
-//  				  |23|   |9|   |4|   |53|			|65|   |12|   |1|   |33|		|65|   |12|   |1|   |33|
-tid(threadIdx)=        0      1     2      3	          0     1      2      3			  0     1      2      3
-blackIdx.x	  =		   0	  0     0	   0			  1     1      1      1			  2     2      2      2
-blockDim.x    =        4	  4		4	   4			  4	    4	   4	  4			  4	    4	   4	  4
-offset		  =		   0      0     0      0              4     4      4      4			  8     8      8      8
-gid			  =		   0	  1     2      3			  4     5      6      7           8     9      10     11
+//bloques 3 y 4				____________						__________
+//fila 1					|65|   |12|   					|5|    |2|   
+//fila 2					|1|    |33|						|1|    |3|
+
+tid = blockDim.x * threadIdx.y + threadIdx.x;
+num_threads_in_a_block = blockDim.x * blockDim.y;
+block_offset = blockIdx.x * num_threads_in_a_block;
+num_threads_in_a_row = num_threads_in_a_block * gridDim.x;
+row_offset = num_threads_in_a_row * blockIdx.y;
+gid = tid + block_offset + row_offset;
+
+//fila 1 de bloques			|23|   |9|    |4|   |53|		 |22|   |1|   |1|    |3|
+blockDim.x    =				 2		2	   2     2			  2		2	   2      2
+treadsIdx.x   =				 0		1	   0     1			  0	    1	   0	  1
+treadsIdx.y   =				 0		0	   1     1			  0	    0	   1	  1
+tid			  =				 0      1      2     3	          0     1      2      3
+blockDim.y    =				 2		2	   2     2			  2		2	   2      2
+num_threads_in_a_block =	 4      4      4     4	          4     4      4      4
+blockIdx.x	  =				 0	    0      0     0			  1     1      1      1
+block_offset  =				 0	    0      0     0			  4     4      4      4
+gridDim.x     =				 2      2      2     2			  2		2	   2	  2
+num_threads_in_a_row   =	 8      8      8     8			  8     8      8      8
+blockIdx.y	  =				 0	    0      0     0			  0     0      0      0
+rowOffset	  =				 0		0      0     0			  0     0      0      0
+gid			  =				 0		1      2     3			  4     5      6      7
+
+tid = blockDim.x * threadIdx.y + threadIdx.x;
+num_threads_in_a_block = blockDim.x * blockDim.y;
+block_offset = blockIdx.x * num_threads_in_a_block;
+num_threads_in_a_row = num_threads_in_a_block * gridDim.x;
+row_offset = num_threads_in_a_row * blockIdx.y;
+gid = tid + block_offset + row_offset;
+
+//fila 2 de bloques			|65|   |12|   |1|   |33|		 |5|    |2|   |1|    |3|
+blockDim.x    =				 2		2	   2     2			  2		2	   2      2
+treadsIdx.x   =				 0		1	   0     1			  0	    1	   0	  1
+treadsIdx.y   =				 0		0	   1     1			  0	    0	   1	  1
+tid			  =				 0      1      2     3	          0     1      2      3
+blockDim.y    =				 2		2	   2     2			  2		2	   2      2
+num_threads_in_a_block =	 4      4      4     4	          4     4      4      4
+blockIdx.x	  =				 0	    0      0     0			  1     1      1      1
+block_offset  =				 0	    0      0     0			  4     4      4      4
+gridDim.x     =				 2      2      2     2			  2		2	   2	  2
+num_threads_in_a_row   =	 8      8      8     8			  8     8      8      8
+blockIdx.y	  =				 1	    1      1     1			  1	    1      1      1
+rowOffset	  =				 8      8      8     8			  8     8      8      8
+gid			  =				 8		9      10    11			  12    13     14     15
 
 */
 
-	printf("blockIdx.x : %d, threadIdx.x : %d, gid: %d, value : %d \n",
-		blockIdx.x, tid, gid, input[gid]);
+	printf("blockIdx.x : %d, blockIdx.y: %d, threadIdx.x: %d, gid: %d - input: %d \n",
+		blockIdx.x, blockIdx.y, tid, gid, input[gid]);
 	 
 }
 
@@ -467,12 +705,13 @@ int main()
 	//dim3 block(8); //8 threads en un bloque
 	//dim3 grid(1);
 
-	dim3 block(4); // 4 threads en 4 bloques 
-	dim3 grid(4);
+	dim3 block(2,2); // 4 threads en cada block (2x2)
+	dim3 grid(2,2);  // 4 blocks (2x2)
 
-	unique_gid_calculation << <grid, block >> > (d_data);
+	unique_gid_calculation_2d_2d << <grid, block >> > (d_data);
 	cudaDeviceReset();
 	return 0;
 
 
 }
+

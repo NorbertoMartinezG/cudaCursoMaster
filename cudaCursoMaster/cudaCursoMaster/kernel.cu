@@ -583,8 +583,8 @@ gid = tid + offset + row_offset; //indice en el que empezara a asignar valores a
 //}
 
 
-//-----------------110  Unique index calculation for 2D grid 2--------------------
-//-----------------110  calculo del indice global para cuadricula 2D  (GRID DE 2X2 CON 2x2 hilos) -----
+//-----------------111  Unique index calculation for 2D grid 2--------------------
+//-----------------111  calculo del indice global para cuadricula 2D  (GRID DE 2X2 CON 2x2 hilos) -----
 /*
 *
 * Formula para calcular el indice unico para identificar los hilos que estan en una segunda fila
@@ -600,26 +600,26 @@ gid = tid + offset + row_offset; //indice en el que empezara a asignar valores a
 
 //asignar valores de un array continuos a un grupo de blocks (grid 2D con 16 hilos en 4 bloques de 2x2 hilos)
 
-#include "cuda_runtime.h"
-#include "device_launch_parameters.h"
-
-#include <stdio.h>
-#include <iostream>
-using namespace std;
-
-
-
-__global__ void unique_gid_calculation_2d_2d(int * input)
-{
-	int tid = blockDim.x * threadIdx.y + threadIdx.x;
-	
-	int num_threads_in_a_block = blockDim.x * blockDim.y;
-	int block_offset = blockIdx.x * num_threads_in_a_block;
-
-	int num_threads_in_a_row = num_threads_in_a_block * gridDim.x;
-	int row_offset = num_threads_in_a_row * blockIdx.y;
-
-	int gid = tid + block_offset + row_offset; //indice en el que empezara a asignar valores a cada bloque de hilos
+//#include "cuda_runtime.h"
+//#include "device_launch_parameters.h"
+//
+//#include <stdio.h>
+//#include <iostream>
+//using namespace std;
+//
+//
+//
+//__global__ void unique_gid_calculation_2d_2d(int * input)
+//{
+//	int tid = blockDim.x * threadIdx.y + threadIdx.x;
+//	
+//	int num_threads_in_a_block = blockDim.x * blockDim.y;
+//	int block_offset = blockIdx.x * num_threads_in_a_block;
+//
+//	int num_threads_in_a_row = num_threads_in_a_block * gridDim.x;
+//	int row_offset = num_threads_in_a_row * blockIdx.y;
+//
+//	int gid = tid + block_offset + row_offset; //indice en el que empezara a asignar valores a cada bloque de hilos
 
 	//ejemplo de 3 blocks
 /*
@@ -679,39 +679,210 @@ gid			  =				 8		9      10    11			  12    13     14     15
 
 */
 
-	printf("blockIdx.x : %d, blockIdx.y: %d, threadIdx.x: %d, gid: %d - input: %d \n",
-		blockIdx.x, blockIdx.y, tid, gid, input[gid]);
-	 
+//	printf("blockIdx.x : %d, blockIdx.y: %d, threadIdx.x: %d, gid: %d - input: %d \n",
+//		blockIdx.x, blockIdx.y, tid, gid, input[gid]);
+//	 
+//}
+//
+//int main()
+//{
+//	int array_size = 16;
+//	int array_byte_size = sizeof(int) * array_size;
+//	int h_data[] = { 23,9,4,53,65,12,1,33,22,1,1,3,5,2,1,3 };
+//
+//	for (int i = 0; i < array_size; i++)
+//	{
+//		cout << h_data[i] << " ";
+//	}
+//
+//	cout << endl;
+//	cout << endl;
+//
+//	int* d_data;
+//	cudaMalloc((void**)&d_data, array_byte_size);
+//	cudaMemcpy(d_data, h_data, array_byte_size, cudaMemcpyHostToDevice);
+//
+//	//dim3 block(8); //8 threads en un bloque
+//	//dim3 grid(1);
+//
+//	dim3 block(2,2); // 4 threads en cada block (2x2)
+//	dim3 grid(2,2);  // 4 blocks (2x2)
+//
+//	unique_gid_calculation_2d_2d << <grid, block >> > (d_data);
+//	cudaDeviceReset();
+//	return 0;
+//
+//
+//}
+
+//-----------------112	CUDA MEMORY TRANSFER --------------------------------------------------
+
+/*
+-Two devices
+	-HOST ( cpu- memory) - CPU - CACHES AND DRAM
+	-DEVICE  ( gpu - internal gpu memory)- SM (stream multiprocess) - CACHES AND DRAM
+
+- Para transferir memoria entre el host y el dispositivo
+	cudaMemCpy(
+		destination ptr, source ptr,
+				size in byte, direction)
+				* ptr = puntero 
+				*destination ptr = hostToDevice o DeviceToHost o HostToHost (cudamemcpyhtod, cudamemcpydtoh, cudamemcpydtod)
+		
+*/
+
+//Ejemplo 1. pasar datos a memoria del device en un solo bloque de hilos
+
+
+//#include "cuda_runtime.h"
+//#include "device_launch_parameters.h"
+//
+//#include <stdio.h>
+//#include <iostream>
+//#include <stdlib.h>
+//#include <time.h>
+//using namespace std;
+//
+//__global__ void mem_trs_test(int* input) // kernel que toma como un puntero a una matriz de enteros
+//{
+//	//cuadricula 1D con 2 bloques de hilos
+//	int gid = blockIdx.x * blockDim.x + threadIdx.x; //indice global para acceder a elementos de la matriz
+//	printf("tid: %d, gid: %d, value: %d \n", threadIdx.x, gid, input[gid]);
+//}
+//
+//
+//
+//int main()
+//{
+//	int size = 128; // tamaño de la matriz
+//	int byte_size = size * sizeof(int);// cantidad de bytes que necesitamos para asignar a esta matriz 
+//	int* h_input;	//asignar memoria del Host (la h_ es para indicar que es una variable del lenguaje principal)
+//
+//	//asignacion de memoria usando funcion malloc.
+//	h_input = (int*)malloc(byte_size); // asinacion de bytes necesarios
+//
+//	//inicializacion aleatoria de la matriz con secuencia aleatoria de numeros
+//	time_t t;
+//	srand((unsigned)time(&t));
+//	for (int i = 0; i < size; i++)
+//	{
+//		h_input[i] = (int)(rand() & 0xff);//valor aleatoria entre 0 y 255
+//	}
+//
+//	int* d_input; // se utiliza d_ para indicar que es una variable de dispositivo
+//
+//	//asignacion de memoria en el dispositivo(gpu)
+//	/*
+//		C		   CUDA
+//	malloc		cudaMalloc -- asignar memoria
+//	memset		cudaMemset -- establece valores para una ubicacion de memoria dada
+//	free		cudaFree   -- recupera la ubicacion de memoria especificada
+//	
+//	*/
+//
+//	// ** = puntero doble o puntero a un puntero
+//	// &d_input = especifica tamaño de la memoria
+//	cudaMalloc((void**)&d_input,byte_size); 
+//
+//	cudaMemcpy(d_input,h_input,byte_size,cudaMemcpyHostToDevice);// tranferir la matriz inicializada en el host al dispositivo
+//	// h_input = puntero de origen
+//	// d_input = puntero de destino en el device
+//
+//	//parametros de lanzamiento
+//	dim3 block(64); // TODO: POR LO GENERAL SE MANTIENE EL TAMAÑO EN MULTIPLOS DE 32
+//	dim3 grid(2);
+//
+//	mem_trs_test << <grid, block >> > (d_input);
+//	cudaDeviceSynchronize();// hace que la ejecucion espere en este punto
+//
+//	cudaFree(d_input); // recuperar memoria 
+//	free(h_input); // recuperar memoria 
+//
+//	cudaDeviceReset();
+//	return 0;
+//
+//}
+
+//***********************************************
+
+//Ejemplo 2. pasar datos a memoria del device en varios bloques de hilos
+
+
+#include "cuda_runtime.h"
+#include "device_launch_parameters.h"
+
+#include <stdio.h>
+#include <iostream>
+#include <stdlib.h>
+#include <time.h>
+using namespace std;
+
+__global__ void mem_trs_test2(int* input, int size) // kernel que toma como un puntero a una matriz de enteros
+{ //int size = tamaño matriz
+	
+	//cuadricula 1D con 2 bloques de hilos
+	int gid = blockIdx.x * blockDim.x + threadIdx.x; //indice global para acceder a elementos de la matriz
+	
+													 
+	// CON ESTA VERIFICACION SOLO SE UTILIZAN LOS HILOS QUE MANEJARAN DATOS DADO EL INPUT												 
+	/*if (gid < size)
+	{
+		printf("tid: %d, gid: %d, value: %d \n", threadIdx.x, gid, input[gid]);
+	}*/
+
+	// SIN LA VERIFICACION SE ACCEDE A LOS HILOS DE TODO EL GRID AUN CUANDO NO MANEJEN DATOS
+	printf("tid: %d, gid: %d, value: %d \n", threadIdx.x, gid, input[gid]);
 }
+
+
 
 int main()
 {
-	int array_size = 16;
-	int array_byte_size = sizeof(int) * array_size;
-	int h_data[] = { 23,9,4,53,65,12,1,33,22,1,1,3,5,2,1,3 };
+	int size = 150; // tamaño de la matriz
+	int byte_size = size * sizeof(int);// cantidad de bytes que necesitamos para asignar a esta matriz 
+	int* h_input;	//asignar memoria del Host (la h_ es para indicar que es una variable del lenguaje principal)
 
-	for (int i = 0; i < array_size; i++)
+	//asignacion de memoria usando funcion malloc.
+	h_input = (int*)malloc(byte_size); // asinacion de bytes necesarios
+
+	//inicializacion aleatoria de la matriz con secuencia aleatoria de numeros
+	time_t t;
+	srand((unsigned)time(&t));
+	for (int i = 0; i < size; i++)
 	{
-		cout << h_data[i] << " ";
+		h_input[i] = (int)(rand() & 0xff);//valor aleatoria entre 0 y 255
 	}
 
-	cout << endl;
-	cout << endl;
+	int* d_input; // se utiliza d_ para indicar que es una variable de dispositivo
 
-	int* d_data;
-	cudaMalloc((void**)&d_data, array_byte_size);
-	cudaMemcpy(d_data, h_data, array_byte_size, cudaMemcpyHostToDevice);
+	//asignacion de memoria en el dispositivo(gpu)
+	/*
+		C		   CUDA
+	malloc		cudaMalloc -- asignar memoria
+	memset		cudaMemset -- establece valores para una ubicacion de memoria dada
+	free		cudaFree   -- recupera la ubicacion de memoria especificada
 
-	//dim3 block(8); //8 threads en un bloque
-	//dim3 grid(1);
+	*/
 
-	dim3 block(2,2); // 4 threads en cada block (2x2)
-	dim3 grid(2,2);  // 4 blocks (2x2)
+	// ** = puntero doble o puntero a un puntero
+	// &d_input = especifica tamaño de la memoria
+	cudaMalloc((void**)&d_input, byte_size);
 
-	unique_gid_calculation_2d_2d << <grid, block >> > (d_data);
+	cudaMemcpy(d_input, h_input, byte_size, cudaMemcpyHostToDevice);// tranferir la matriz inicializada en el host al dispositivo
+	// h_input = puntero de origen
+	// d_input = puntero de destino en el device
+
+	//parametros de lanzamiento
+	dim3 block(32); // TODO: POR LO GENERAL SE MANTIENE EL TAMAÑO EN MULTIPLOS DE 32
+	dim3 grid(5);
+
+	mem_trs_test2 << <grid, block >> > (d_input,size);
+	cudaDeviceSynchronize();// hace que la ejecucion espere en este punto
+
+	cudaFree(d_input); // recuperar memoria 
+	free(h_input); // recuperar memoria 
+
 	cudaDeviceReset();
 	return 0;
 
-
 }
-

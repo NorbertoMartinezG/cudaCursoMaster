@@ -890,6 +890,123 @@ gid			  =				 8		9      10    11			  12    13     14     15
 //-----------------112	exercise GRID 3D --------------------------------------------------
 
 //-----------------114 Sum array example with validity check --------------------------------------------------
+//#include "cuda_runtime.h"
+//#include "device_launch_parameters.h"
+////#include "cuda_common.cuh"
+//
+//#include <stdio.h>
+//#include "common.h" // incluye metodo para comparar matrices
+//
+//// for random initialize
+//#include <stdlib.h>
+//#include <time.h>
+//
+//// for memset
+//#include <cstring>
+//using namespace std;
+//
+//__global__ void sum_array_gpu(int* a, int* b, int* c, int size)
+//{
+//	int gid = blockIdx.x * blockDim.x + threadIdx.x;
+//
+//	if (gid < size) // verificar si el indice global esta dentro del tamaño de nuestra matriz
+//	{
+//		c[gid] = a[gid] + b[gid];
+//	}
+//}
+//
+//// funcion para verificar resultado de gpu
+//void sum_array_cpu(int* a, int* b, int* c, int size)
+//{
+//	for (int i = 0; i < size; i++)
+//	{
+//		c[i] = a[i] + b[i];
+//	}
+//}
+//
+//int main()
+//{
+//	int size = 10000; // tamaño de la matriz
+//	int block_size = 128; // tamaño del bloque en 128
+//	int num_bytes = size * sizeof(int); // tamaño necesario en bytes
+//
+//	// punteros host
+//	int* h_a, * h_b, * gpu_results;
+//	
+//	int* h_c; // para verificacion en cpu
+//
+//	//asignacion de memoria para cada puntero
+//	h_a = (int*)malloc(num_bytes);
+//	h_b = (int*)malloc(num_bytes);
+//	gpu_results = (int*)malloc(num_bytes);
+//	
+//	h_c = (int*)malloc(num_bytes);// para verificacion en cpu
+//
+//	//inicializacion aleatoria de cada matriz
+//	time_t t;
+//	srand((unsigned)time(&t));
+//	for (int i = 0; i < size; i++)
+//	{
+//		h_a[i] = (int)(rand() & 0xFF); // valor generado entre 0 y 255
+//	}
+//	for (int i = 0; i < size; i++)
+//	{
+//		h_b[i] = (int)(rand() & 0xFF);
+//	}
+//
+//	sum_array_cpu(h_a, h_b, h_c, size);
+//
+//	memset(gpu_results, 0, num_bytes);
+//
+//	// punteros device
+//	int* d_a, * d_b, * d_c;
+//	cudaMalloc((int**)&d_a, num_bytes);
+//	cudaMalloc((int**)&d_b, num_bytes);
+//	cudaMalloc((int**)&d_c, num_bytes);
+//
+//	//tranferencia de matriz h_a y h_b
+//	cudaMemcpy(d_a, h_a, num_bytes, cudaMemcpyHostToDevice);
+//	cudaMemcpy(d_b, h_b, num_bytes, cudaMemcpyHostToDevice);
+//
+//	//launching the grid
+//	dim3 block(block_size); //tamaño de bloque 128 en la dimension X
+//	dim3 grid((size / block.x) + 1); // (10000 / 128) + 128 = GRID 1D de 79 block de 128 hilos cada uno
+//
+//	sum_array_gpu << <grid, block >> > (d_a, d_b, d_c, size);
+//	cudaDeviceSynchronize();
+//
+//	cudaMemcpy(gpu_results, d_c, num_bytes, cudaMemcpyDeviceToHost); // puntero de origen d_c, puntero de destino gpu_results
+//
+//	// COMPARACION DE RESULTADOS CPU Y GPU
+//	compare_arrays(gpu_results, h_c, size);
+//	
+//	cudaFree(d_c);
+//	cudaFree(d_b);
+//	cudaFree(d_a);
+//	 
+//	free(gpu_results);
+//	free(h_b);
+//	free(h_a);
+//
+//	cudaDeviceReset();
+//	return 0;
+//
+//
+//}
+
+//-----------------116 Error handling --------------------------------------------------
+
+/*Types error
+*	-Compile time errors
+*		-Errors language syntax.
+* 
+*	-Run time errors
+*		-Errors happens while program is running
+* 
+*/
+
+//ejemplo  con la suma anterior
+
 #include "cuda_runtime.h"
 #include "device_launch_parameters.h"
 //#include "cuda_common.cuh"
@@ -903,6 +1020,9 @@ gid			  =				 8		9      10    11			  12    13     14     15
 
 // for memset
 #include <cstring>
+
+#include "cuda_common.cuh"
+
 using namespace std;
 
 __global__ void sum_array_gpu(int* a, int* b, int* c, int size)
@@ -929,6 +1049,9 @@ int main()
 	int size = 10000; // tamaño de la matriz
 	int block_size = 128; // tamaño del bloque en 128
 	int num_bytes = size * sizeof(int); // tamaño necesario en bytes
+
+	//ERROR (comprobacion)
+	cudaError error;
 
 	// punteros host
 	int* h_a, * h_b, * gpu_results;
@@ -960,9 +1083,25 @@ int main()
 
 	// punteros device
 	int* d_a, * d_b, * d_c;
-	cudaMalloc((int**)&d_a, num_bytes);
-	cudaMalloc((int**)&d_b, num_bytes);
-	cudaMalloc((int**)&d_c, num_bytes);
+	
+	//---------------------------
+	//ERROR FORMA MANUAL
+	/*error = cudaMalloc((int**)&d_a, num_bytes);
+	if (error != cudaSuccess)
+	{
+		fprintf(stderr, "Error : %s \n", cudaGetErrorString(error));
+	}*/
+
+	//ERROR UTILIZANDO cuda_common.cuh
+	
+	gpuErrchk(cudaMalloc((int**)&d_a, num_bytes));
+	gpuErrchk(cudaMalloc((int**)&d_b, num_bytes));
+	gpuErrchk(cudaMalloc((int**)&d_c, num_bytes));
+
+	//-------------------------------
+	//cudaMalloc((int**)&d_a, num_bytes);
+	//cudaMalloc((int**)&d_b, num_bytes);
+	//cudaMalloc((int**)&d_c, num_bytes);
 
 	//tranferencia de matriz h_a y h_b
 	cudaMemcpy(d_a, h_a, num_bytes, cudaMemcpyHostToDevice);

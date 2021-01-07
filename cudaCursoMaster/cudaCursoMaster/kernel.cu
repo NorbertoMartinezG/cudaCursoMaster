@@ -1306,6 +1306,7 @@ gid			  =				 8		9      10    11			  12    13     14     15
 //}
 
 //----------------------------------117 Device properties --------------------------------------------------
+
 #include "cuda_runtime.h"
 #include "device_launch_parameters.h"
 

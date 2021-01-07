@@ -1136,171 +1136,227 @@ gid			  =				 8		9      10    11			  12    13     14     15
 //-----------------116 Sum array example with  timing --------------------------------------------------
 // tiempo de ejecucion en cpu y gpu
 
+//#include "cuda_runtime.h"
+//#include "device_launch_parameters.h"
+////#include "cuda_common.cuh"
+//
+//#include <stdio.h>
+//#include "common.h" // incluye metodo para comparar matrices
+//
+//// for random initialize
+//#include <stdlib.h>
+//#include <time.h>
+//
+//// for memset
+//#include <cstring>
+//
+//#include "cuda_common.cuh"
+//
+//using namespace std;
+//
+//__global__ void sum_array_gpu(int* a, int* b, int* c, int size)
+//{
+//	int gid = blockIdx.x * blockDim.x + threadIdx.x;
+//
+//	if (gid < size) // verificar si el indice global esta dentro del tamaño de nuestra matriz
+//	{
+//		c[gid] = a[gid] + b[gid];
+//	}
+//}
+//
+//// funcion para verificar resultado de gpu
+//void sum_array_cpu(int* a, int* b, int* c, int size)
+//{
+//	for (int i = 0; i < size; i++)
+//	{
+//		c[i] = a[i] + b[i];
+//	}
+//}
+//
+//int main()
+//{
+//	int size = 10000; // tamaño de la matriz
+//	int block_size = 128; // tamaño del bloque en 128
+//	int num_bytes = size * sizeof(int); // tamaño necesario en bytes
+//
+//	//ERROR (comprobacion)
+//	cudaError error;
+//
+//	// punteros host
+//	int* h_a, * h_b, * gpu_results;
+//	
+//	int* h_c; // para verificacion en cpu
+//
+//	//asignacion de memoria para cada puntero
+//	h_a = (int*)malloc(num_bytes);
+//	h_b = (int*)malloc(num_bytes);
+//	gpu_results = (int*)malloc(num_bytes);
+//	
+//	h_c = (int*)malloc(num_bytes);// para verificacion en cpu
+//
+//	//inicializacion aleatoria de cada matriz
+//	time_t t;
+//	srand((unsigned)time(&t));
+//	for (int i = 0; i < size; i++)
+//	{
+//		h_a[i] = (int)(rand() & 0xFF); // valor generado entre 0 y 255
+//	}
+//	for (int i = 0; i < size; i++)
+//	{
+//		h_b[i] = (int)(rand() & 0xFF);
+//	}
+//
+//	//*******************
+//	// PARA SUMA DE TIEMPo en la funcion sum_array_cpu 
+//	clock_t cpu_start, cpu_end;
+//	cpu_start = (double)clock();
+//	printf("cpu_start: %0.5f \n", (double)cpu_start);
+//	sum_array_cpu(h_a, h_b, h_c, size);
+//	cpu_end = (double)clock();
+//	printf("cpu_end: %0.5f \n", (double)cpu_end);
+//	//*******************
+//	
+//
+//	memset(gpu_results, 0, num_bytes);
+//	memset(gpu_results, 0, num_bytes);
+//
+//	
+//
+//	// punteros device
+//	int* d_a, * d_b, * d_c;
+//	
+//	//---------------------------
+//	//ERROR FORMA MANUAL
+//	/*error = cudaMalloc((int**)&d_a, num_bytes);
+//	if (error != cudaSuccess)
+//	{
+//		fprintf(stderr, "Error : %s \n", cudaGetErrorString(error));
+//	}*/
+//
+//	//ERROR UTILIZANDO cuda_common.cuh
+//	
+//	gpuErrchk(cudaMalloc((int**)&d_a, num_bytes));
+//	gpuErrchk(cudaMalloc((int**)&d_b, num_bytes));
+//	gpuErrchk(cudaMalloc((int**)&d_c, num_bytes));
+//
+//	//-------------------------------
+//	//cudaMalloc((int**)&d_a, num_bytes);
+//	//cudaMalloc((int**)&d_b, num_bytes);
+//	//cudaMalloc((int**)&d_c, num_bytes);
+//
+//	//*******************
+//	// TIEMPO QUE UTILIZA GPU PARA tranferir datos a memoria
+//	clock_t htod_start, htod_end;
+//	htod_start = clock();
+//	//tranferencia de matriz h_a y h_b
+//	cudaMemcpy(d_a, h_a, num_bytes, cudaMemcpyHostToDevice);
+//	cudaMemcpy(d_b, h_b, num_bytes, cudaMemcpyHostToDevice);
+//	htod_end = clock();
+//	//*******************
+//
+//	//launching the grid
+//	dim3 block(block_size); //tamaño de bloque 128 en la dimension X
+//	dim3 grid((size / block.x) + 1); // (10000 / 128) + 128 = GRID 1D de 79 block de 128 hilos cada uno
+//
+//	//*******************
+//	// TIEMPO QUE UTILIZA GPU PARA ejecutar el kernel
+//	clock_t gpu_start, gpu_end;
+//	gpu_start = clock();
+//	sum_array_gpu << <grid, block >> > (d_a, d_b, d_c, size);
+//	gpu_end = clock();
+//	//*******************
+//	
+//	cudaDeviceSynchronize();
+//
+//	
+//	//*******************
+//	// TIEMPO QUE UTILIZA GPU PARA tranferir datos a host
+//	clock_t dtoh_start, dtoh_end;
+//	dtoh_start = clock();
+//	cudaMemcpy(gpu_results, d_c, num_bytes, cudaMemcpyDeviceToHost); // puntero de origen d_c, puntero de destino gpu_results
+//	dtoh_end = clock();
+//	//*******************
+//
+//	// COMPARACION DE RESULTADOS CPU Y GPU
+//	compare_arrays(gpu_results, h_c, size);
+//	
+//	cudaFree(d_c);
+//	cudaFree(d_b);
+//	cudaFree(d_a);
+//	
+//	// VELOCIDAD DE RELOJ DE CPU
+//	printf("sum array CPU execution time: %4.6f \n", (double)((double)(cpu_end - cpu_start) / CLOCKS_PER_SEC));
+//	
+//	// VELOCIDAD DE RELOJ DE CPU
+//	printf("sum array GPU execution time: %4.6f \n", (double)((double)(gpu_end - gpu_start) / CLOCKS_PER_SEC));
+//	printf("htod mem transfer time: %4.6f \n", (double)((double)(htod_end - htod_start) / CLOCKS_PER_SEC));
+//	printf("dtod mem transfer time: %4.6f \n", (double)((double)(dtoh_end - dtoh_start) / CLOCKS_PER_SEC));
+//
+//	printf("Sum array GPU total execution time: %4.6f \n", (double)((double)(dtoh_end - htod_start) / CLOCKS_PER_SEC));
+//
+//	
+//	free(gpu_results);
+//	free(h_b);
+//	free(h_a);
+//
+//	cudaDeviceReset();
+//	return 0;
+//
+//
+//}
+
+//----------------------------------117 Device properties --------------------------------------------------
 #include "cuda_runtime.h"
 #include "device_launch_parameters.h"
-//#include "cuda_common.cuh"
 
 #include <stdio.h>
-#include "common.h" // incluye metodo para comparar matrices
 
-// for random initialize
-#include <stdlib.h>
-#include <time.h>
-
-// for memset
-#include <cstring>
-
-#include "cuda_common.cuh"
-
-using namespace std;
-
-__global__ void sum_array_gpu(int* a, int* b, int* c, int size)
+void query_device()
 {
-	int gid = blockIdx.x * blockDim.x + threadIdx.x;
+	int deviceCount = 0;
+	cudaGetDeviceCount(&deviceCount);
 
-	if (gid < size) // verificar si el indice global esta dentro del tamaño de nuestra matriz
+	if (deviceCount == 0)
 	{
-		c[gid] = a[gid] + b[gid];
+		printf("No CUDA support device found");
 	}
-}
 
-// funcion para verificar resultado de gpu
-void sum_array_cpu(int* a, int* b, int* c, int size)
-{
-	for (int i = 0; i < size; i++)
-	{
-		c[i] = a[i] + b[i];
-	}
+	int devNo = 0;
+	cudaDeviceProp iProp;
+	cudaGetDeviceProperties(&iProp, devNo);
+
+	printf("Device %d: %s\n", devNo, iProp.name);
+	printf("  Number of multiprocessors:                     %d\n",
+		iProp.multiProcessorCount);
+	printf("  clock rate :                     %d\n",
+		iProp.clockRate);
+	printf("  Compute capability       :                     %d.%d\n",
+		iProp.major, iProp.minor);
+	printf("  Total amount of global memory:                 %4.2f KB\n",
+		iProp.totalGlobalMem / 1024.0);
+	printf("  Total amount of constant memory:               %4.2f KB\n",
+		iProp.totalConstMem / 1024.0);
+	printf("  Total amount of shared memory per block:       %4.2f KB\n",
+		iProp.sharedMemPerBlock / 1024.0);
+	printf("  Total amount of shared memory per MP:          %4.2f KB\n",
+		iProp.sharedMemPerMultiprocessor / 1024.0);
+	printf("  Total number of registers available per block: %d\n",
+		iProp.regsPerBlock);
+	printf("  Warp size:                                     %d\n",
+		iProp.warpSize);
+	printf("  Maximum number of threads per block:           %d\n",
+		iProp.maxThreadsPerBlock);
+	printf("  Maximum number of threads per multiprocessor:  %d\n",
+		iProp.maxThreadsPerMultiProcessor);
+	printf("  Maximum number of warps per multiprocessor:    %d\n",
+		iProp.maxThreadsPerMultiProcessor / 32);
+	printf("  Maximum Grid size                         :    (%d,%d,%d)\n",
+		iProp.maxGridSize[0], iProp.maxGridSize[1], iProp.maxGridSize[2]);
+	printf("  Maximum block dimension                   :    (%d,%d,%d)\n",
+		iProp.maxThreadsDim[0], iProp.maxThreadsDim[1], iProp.maxThreadsDim[2]);
 }
 
 int main()
 {
-	int size = 10000; // tamaño de la matriz
-	int block_size = 128; // tamaño del bloque en 128
-	int num_bytes = size * sizeof(int); // tamaño necesario en bytes
-
-	//ERROR (comprobacion)
-	cudaError error;
-
-	// punteros host
-	int* h_a, * h_b, * gpu_results;
-	
-	int* h_c; // para verificacion en cpu
-
-	//asignacion de memoria para cada puntero
-	h_a = (int*)malloc(num_bytes);
-	h_b = (int*)malloc(num_bytes);
-	gpu_results = (int*)malloc(num_bytes);
-	
-	h_c = (int*)malloc(num_bytes);// para verificacion en cpu
-
-	//inicializacion aleatoria de cada matriz
-	time_t t;
-	srand((unsigned)time(&t));
-	for (int i = 0; i < size; i++)
-	{
-		h_a[i] = (int)(rand() & 0xFF); // valor generado entre 0 y 255
-	}
-	for (int i = 0; i < size; i++)
-	{
-		h_b[i] = (int)(rand() & 0xFF);
-	}
-
-	//*******************
-	// PARA SUMA DE TIEMPo en la funcion sum_array_cpu 
-	clock_t cpu_start, cpu_end;
-	cpu_start = (double)clock();
-	printf("cpu_start: %0.5f \n", (double)cpu_start);
-	sum_array_cpu(h_a, h_b, h_c, size);
-	cpu_end = (double)clock();
-	printf("cpu_end: %0.5f \n", (double)cpu_end);
-	//*******************
-	
-
-	memset(gpu_results, 0, num_bytes);
-	memset(gpu_results, 0, num_bytes);
-
-	
-
-	// punteros device
-	int* d_a, * d_b, * d_c;
-	
-	//---------------------------
-	//ERROR FORMA MANUAL
-	/*error = cudaMalloc((int**)&d_a, num_bytes);
-	if (error != cudaSuccess)
-	{
-		fprintf(stderr, "Error : %s \n", cudaGetErrorString(error));
-	}*/
-
-	//ERROR UTILIZANDO cuda_common.cuh
-	
-	gpuErrchk(cudaMalloc((int**)&d_a, num_bytes));
-	gpuErrchk(cudaMalloc((int**)&d_b, num_bytes));
-	gpuErrchk(cudaMalloc((int**)&d_c, num_bytes));
-
-	//-------------------------------
-	//cudaMalloc((int**)&d_a, num_bytes);
-	//cudaMalloc((int**)&d_b, num_bytes);
-	//cudaMalloc((int**)&d_c, num_bytes);
-
-	//*******************
-	// TIEMPO QUE UTILIZA GPU PARA tranferir datos a memoria
-	clock_t htod_start, htod_end;
-	htod_start = clock();
-	//tranferencia de matriz h_a y h_b
-	cudaMemcpy(d_a, h_a, num_bytes, cudaMemcpyHostToDevice);
-	cudaMemcpy(d_b, h_b, num_bytes, cudaMemcpyHostToDevice);
-	htod_end = clock();
-	//*******************
-
-	//launching the grid
-	dim3 block(block_size); //tamaño de bloque 128 en la dimension X
-	dim3 grid((size / block.x) + 1); // (10000 / 128) + 128 = GRID 1D de 79 block de 128 hilos cada uno
-
-	//*******************
-	// TIEMPO QUE UTILIZA GPU PARA ejecutar el kernel
-	clock_t gpu_start, gpu_end;
-	gpu_start = clock();
-	sum_array_gpu << <grid, block >> > (d_a, d_b, d_c, size);
-	gpu_end = clock();
-	//*******************
-	
-	cudaDeviceSynchronize();
-
-	
-	//*******************
-	// TIEMPO QUE UTILIZA GPU PARA tranferir datos a host
-	clock_t dtoh_start, dtoh_end;
-	dtoh_start = clock();
-	cudaMemcpy(gpu_results, d_c, num_bytes, cudaMemcpyDeviceToHost); // puntero de origen d_c, puntero de destino gpu_results
-	dtoh_end = clock();
-	//*******************
-
-	// COMPARACION DE RESULTADOS CPU Y GPU
-	compare_arrays(gpu_results, h_c, size);
-	
-	cudaFree(d_c);
-	cudaFree(d_b);
-	cudaFree(d_a);
-	
-	// VELOCIDAD DE RELOJ DE CPU
-	printf("sum array CPU execution time: %4.6f \n", (double)((double)(cpu_end - cpu_start) / CLOCKS_PER_SEC));
-	
-	// VELOCIDAD DE RELOJ DE CPU
-	printf("sum array GPU execution time: %4.6f \n", (double)((double)(gpu_end - gpu_start) / CLOCKS_PER_SEC));
-	printf("htod mem transfer time: %4.6f \n", (double)((double)(htod_end - htod_start) / CLOCKS_PER_SEC));
-	printf("dtod mem transfer time: %4.6f \n", (double)((double)(dtoh_end - dtoh_start) / CLOCKS_PER_SEC));
-
-	printf("Sum array GPU total execution time: %4.6f \n", (double)((double)(dtoh_end - htod_start) / CLOCKS_PER_SEC));
-
-	
-	free(gpu_results);
-	free(h_b);
-	free(h_a);
-
-	cudaDeviceReset();
-	return 0;
-
-
+	query_device();
 }
